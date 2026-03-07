@@ -432,10 +432,11 @@ if (!startDate && !endDate) {
 
   function matchParte_(row, parteCfg) {
     if (!parteCfg) return false;
-    var rowCanal = String(row[col.channel] || '').toLowerCase();
-    var canalOk = !parteCfg.canal || rowCanal.includes(parteCfg.canal.toLowerCase());
+    var rowCanal = String(row[col.channel] || '').trim().toLowerCase();
+    var cfgCanal = String(parteCfg.canal || '').trim().toLowerCase();
+    var canalOk = !cfgCanal || rowCanal === cfgCanal;
     var rowUrl = normUrlStrict_(row[col.url] || '');
-    return canalOk && (!parteCfg.urls.length || parteCfg.urls.some(u => rowUrl === u || rowUrl.startsWith(u + '/')));
+    return canalOk && (!parteCfg.urls.length || parteCfg.urls.some(function(u){ return rowUrl === u; }));
   }
 
   function blankAgg_() {
@@ -488,11 +489,12 @@ if (!startDate && !endDate) {
   function classifyBlock_(adunit, parteName) {
     var s = String(adunit || '').toLowerCase();
     if (parteName === 'P1') {
-      if (s.includes('mob_top')) return {label:'mob_top (P1)', parte:'P1'};
-      if (s.includes('mob_interstitial')) return {label:'mob_interstitial (P1)', parte:'P1'};
+      if (s.includes('mob_top') || s.includes('mobile_top')) return {label:'mob_top (P1)', parte:'P1'};
+      if (s.includes('mob_interstitial') || s.includes('mobile_interstitial')) return {label:'mob_interstitial (P1)', parte:'P1'};
+      if (s.includes('mob_offerwall') || s.includes('mob_rewarded') || s.includes('mobile_offerwall') || s.includes('mobile_rewarded')) return {label:'mob_offerwall (P1)', parte:'P1'};
     } else if (parteName === 'P2') {
-      if (s.includes('mob_offerwall') || s.includes('mob_rewarded')) return {label:'mob_offerwall (P2)', parte:'P2'};
-      if (s.includes('mob_top')) return {label:'mob_top (P2)', parte:'P2'};
+      if (s.includes('mob_offerwall') || s.includes('mob_rewarded') || s.includes('mobile_offerwall') || s.includes('mobile_rewarded')) return {label:'mob_offerwall (P2)', parte:'P2'};
+      if (s.includes('mob_top') || s.includes('mobile_top')) return {label:'mob_top (P2)', parte:'P2'};
     } else if (parteName === 'Quiz') {
       if (s.includes('rewarded')) return {label:'rewarded (Quiz)', parte:'Quiz'};
     }
@@ -634,7 +636,7 @@ if (!startDate && !endDate) {
 
   var seriesChart = generateSeries_(pageHourAgg, (pg, ms) => `${pg}||${ms}`);
   var seriesChartByBlock = {};
-  ['mob_top (P1)', 'mob_interstitial (P1)', 'mob_offerwall (P2)', 'mob_top (P2)', 'rewarded (Quiz)'].forEach(blockLabel => {
+  ['mob_top (P1)', 'mob_interstitial (P1)', 'mob_offerwall (P1)', 'mob_offerwall (P2)', 'mob_top (P2)', 'rewarded (Quiz)'].forEach(blockLabel => {
     seriesChartByBlock[blockLabel] = generateSeries_(blockHourAgg, (pg, ms) => `${pg}||${blockLabel}||${ms}`);
   });
   compare.sort((a,b) => b.revenue - a.revenue);
@@ -753,15 +755,16 @@ if (!startDate && !endDate) {
   }
 
   function matchEntry_(row, entry) {
-    var rowCanal = String(row[col.channel] || '').toLowerCase();
-    if (entry.canal && rowCanal.indexOf(String(entry.canal).toLowerCase()) === -1) {
+    var rowCanal = String(row[col.channel] || '').trim().toLowerCase();
+    var cfgCanal = String(entry.canal || '').trim().toLowerCase();
+    if (cfgCanal && rowCanal !== cfgCanal) {
       return false;
     }
     var normUrl = normUrlStrict_(row[col.url] || '');
     var urls = entry.urls || [];
     if (!urls.length) return true;
     return urls.some(function(u){
-      return normUrl === u || normUrl.indexOf(u + '/') === 0;
+      return normUrl === u;
     });
   }
 
@@ -828,11 +831,12 @@ if (!startDate && !endDate) {
   function classifyBlock_(adunit, parteName) {
     var s = String(adunit || '').toLowerCase();
     if (parteName === 'P1') {
-      if (s.indexOf('mob_top') !== -1) return { label: 'mob_top (P1)', parte: 'P1' };
-      if (s.indexOf('mob_interstitial') !== -1) return { label: 'mob_interstitial (P1)', parte: 'P1' };
+      if (s.indexOf('mob_top') !== -1 || s.indexOf('mobile_top') !== -1) return { label: 'mob_top (P1)', parte: 'P1' };
+      if (s.indexOf('mob_interstitial') !== -1 || s.indexOf('mobile_interstitial') !== -1) return { label: 'mob_interstitial (P1)', parte: 'P1' };
+      if (s.indexOf('mob_offerwall') !== -1 || s.indexOf('mob_rewarded') !== -1 || s.indexOf('mobile_offerwall') !== -1 || s.indexOf('mobile_rewarded') !== -1) return { label: 'mob_offerwall (P1)', parte: 'P1' };
     } else if (parteName === 'P2') {
-      if (s.indexOf('mob_offerwall') !== -1 || s.indexOf('mob_rewarded') !== -1) return { label: 'mob_offerwall (P2)', parte: 'P2' };
-      if (s.indexOf('mob_top') !== -1) return { label: 'mob_top (P2)', parte: 'P2' };
+      if (s.indexOf('mob_offerwall') !== -1 || s.indexOf('mob_rewarded') !== -1 || s.indexOf('mobile_offerwall') !== -1 || s.indexOf('mobile_rewarded') !== -1) return { label: 'mob_offerwall (P2)', parte: 'P2' };
+      if (s.indexOf('mob_top') !== -1 || s.indexOf('mobile_top') !== -1) return { label: 'mob_top (P2)', parte: 'P2' };
     } else if (parteName === 'Quiz') {
       if (s.indexOf('rewarded') !== -1) return { label: 'rewarded (Quiz)', parte: 'Quiz' };
     }
